@@ -1,0 +1,103 @@
+ <!doctype html>
+<html class="no-js" lang="">
+
+<head>
+    <meta charset="utf-8">
+    <title>Админка</title>
+     <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2021.3.1109/styles/kendo.default-v2.min.css"/>
+
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2021.3.1109/js/kendo.all.min.js"></script>
+
+</head>
+<body>
+    <button onClick="reset()" class="k-button">Reset test data</button>
+   <div id="grid"></div>
+<script>
+
+function setTestData(){
+    var testData = [
+      {ID: 1, Name: "Alex@mail.ru"},
+      {ID: 2, Name: "Boy228@gmail.com"},
+      {ID: 3, Name: "Girl@mail.ru"},
+      {ID: 4, Name: "Alex2222@gmail.com"},
+      {ID: 5, Name: "Leongr@mail.ru"}  
+    ];
+    localStorage["grid_data"] = JSON.stringify(testData);
+}
+
+function reset(){
+    setTestData();
+    $("#grid").data("kendoGrid").dataSource.read();
+}
+
+$(document).ready(function () {
+
+    if(localStorage["grid_data"] == undefined){
+        setTestData();
+    }
+
+    var dataSource = new kendo.data.DataSource({
+        transport: {
+          create: function(options){
+            var localData = JSON.parse(localStorage["grid_data"]);
+            options.data.ID = localData[localData.length-1].ID + 1;
+            localData.push(options.data);
+            localStorage["grid_data"] = JSON.stringify(localData);
+            options.success(options.data);
+          },
+          read: function(options){
+              var localData = JSON.parse(localStorage["grid_data"]);
+              options.success(localData);
+          },
+          update: function(options){
+            var localData = JSON.parse(localStorage["grid_data"]);
+
+            for(var i=0; i<localData.length; i++){
+              if(localData[i].ID == options.data.ID){
+                localData[i].Name = options.data.Name;
+              }
+            }
+            localStorage["grid_data"] = JSON.stringify(localData);
+            options.success(options.data);
+          },
+          destroy: function(options){
+            var localData = JSON.parse(localStorage["grid_data"]);
+            for(var i=0; i<localData.length; i++){
+                if(localData[i].ID === options.data.ID){
+                    localData.splice(i,1);
+                    break;
+                }
+            }
+            localStorage["grid_data"] = JSON.stringify(localData);
+            options.success(localData);
+          },
+        },
+        schema: {
+          model: {
+            id: "ID",
+            fields: {
+              ID: { type: "number", editable: false },
+              Name: { type: "string" }
+            }}
+        },
+        pageSize: 20
+    });
+
+    var grid = $("#grid").kendoGrid({
+        dataSource: dataSource,
+        pageable: true,
+        height: 500,
+        toolbar: ["create", "save", "cancel"],
+        columns: [
+          { field: "ID", width: "100px" },
+          { field: "Name", width: "100px"},
+          { command: "destroy" }
+        ],
+        editable: "incell",
+    }).data("kendoGrid");
+});
+</script>
+
+</body>
+</html>
